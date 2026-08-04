@@ -1,5 +1,9 @@
+import 'package:daily_helper_app/services/export_service.dart';
+import 'package:daily_helper_app/services/storage_service.dart';
+import 'package:daily_helper_app/widgets/vat_card_preview.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+//import 'package:qr_flutter/qr_flutter.dart';
+import 'package:screenshot/screenshot.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final issueDateController = TextEditingController();
   final expiryDateController = TextEditingController();
   final pdfLinkController = TextEditingController();
+  final ScreenshotController screenshotController = ScreenshotController();
 
   bool generated = false;
   double leftPix = 167;
@@ -40,6 +45,41 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void resetForm() {
+    cardNoController.clear();
+    binController.clear();
+    nameController.clear();
+    issueDateController.clear();
+    expiryDateController.clear();
+    pdfLinkController.clear();
+
+    setState(() {
+      generated = false;
+    });
+  }
+
+  Future<void> exportCard() async {
+    try {
+      final path = await ExportService.exportAsPng(screenshotController);
+      final saved = await StorageService.saveImage(path);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved ? "Saved to gallery!" : "PNG created but gallery save failed",
+          ),
+        ),
+      );
+      resetForm();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
   Widget buildField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -61,100 +101,22 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            AspectRatio(
-              aspectRatio: 1.75,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      "assets/vatcard.png",
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                  if (generated)
-                    Positioned(
-                      right: 18,
-                      bottom: 18,
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        color: Colors.white,
-                        child: QrImageView(
-                          data: pdfLinkController.text,
-                          version: QrVersions.auto,
-                        ),
-                      ),
-                    ),
-
-                  if (generated)
-                    Positioned(
-                      left: leftPix,
-                      top: topPix,
-                      child: Text(
-                        cardNoController.text,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  if (generated)
-                    Positioned(
-                      left: leftPix,
-                      top: topPix + 10,
-                      child: Text(
-                        binController.text,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  if (generated)
-                    Positioned(
-                      left: leftPix,
-                      top: topPix + 20,
-                      child: Text(
-                        nameController.text,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  if (generated)
-                    Positioned(
-                      left: leftPix,
-                      top: topPix + 30,
-                      child: Text(
-                        issueDateController.text,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  if (generated)
-                    Positioned(
-                      left: leftPix,
-                      top: topPix + 40,
-                      child: Text(
-                        expiryDateController.text,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
+            Screenshot(
+              controller: screenshotController,
+              child: VatCardPreview(
+                generated: generated,
+                cardNo: cardNoController.text,
+                bin: binController.text,
+                businessName: nameController.text,
+                issueDate: issueDateController.text,
+                expiryDate: expiryDateController.text,
+                pdfLink: pdfLinkController.text,
+                leftPix: leftPix,
+                topPix: topPix,
+                customFontSize: customfontSize,
+                fontWeight: fontWeight,
               ),
             ),
-
             const SizedBox(height: 20),
 
             buildField("Card Number", cardNoController),
@@ -171,9 +133,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 20),
 
-            ElevatedButton(
-              onPressed: generateCard,
-              child: const Text("Generate"),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: generateCard,
+                    child: const Text("Generate"),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: exportCard,
+                    child: const Text("Save PNG"),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
