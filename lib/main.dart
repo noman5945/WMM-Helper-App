@@ -1,5 +1,7 @@
+import 'package:daily_helper_app/features/cheque_scan/presentation/screens/bank_record.dart';
+import 'package:daily_helper_app/features/cheque_scan/presentation/screens/camera_screen.dart';
 import 'package:daily_helper_app/routes/routes.dart';
-import 'package:daily_helper_app/screens/bankrecords_screen.dart';
+//import 'package:daily_helper_app/screens/bankrecords_screen.dart';
 import 'package:daily_helper_app/screens/menu_screen.dart';
 import 'package:daily_helper_app/screens/vatcard_screen.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +32,8 @@ class WMMApp extends StatelessWidget {
       routes: {
         AppRoutes.home: (context) => const MenuScreen(),
         AppRoutes.vatcard: (context) => const VatcardScreen(),
-        AppRoutes.bankrecords: (context) => const BankrecordsScreen(),
+        AppRoutes.bankrecords: (context) => const BankRecord(),
+        AppRoutes.scancheque: (context) => CameraScreen(),
       },
     );
   }
